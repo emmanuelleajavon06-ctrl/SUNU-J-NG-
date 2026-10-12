@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SUNU JÀNG PAY – Connexion</title>
+<link rel="icon" href="/static/logo_icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:Inter,sans-serif;font-weight:500;background:#F8FAFC}
+h1,h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800}
+.card{animation:in .3s ease-out}@keyframes in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+body input{width:100%;border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;outline:none}
+body input:focus{border-color:#6366F1;box-shadow:0 0 0 3px #6366F133}
+@media(prefers-reduced-motion:reduce){.card{animation:none}}
+</style></head>
+<body class="min-h-screen grid lg:grid-cols-2">
+<aside class="hidden lg:flex flex-col justify-center items-center bg-[#0F172A] p-12 text-center">
+  <div class="bg-white rounded-3xl p-6"><img src="/static/logo.png" alt="SUNU JÀNG PAY" class="w-[420px] max-w-full"></div>
+  <h2 class="text-white text-3xl mt-10">Fini de courir après les mensualités.</h2>
+  <p class="text-slate-400 mt-3 max-w-sm">Encaissez, relancez les parents par WhatsApp et délivrez des reçus vérifiables, pour des écoles jusqu'à 30 000 élèves.</p>
+</aside>
+<main class="flex items-center justify-center p-6">
+<div class="card w-full max-w-md bg-white rounded-3xl p-8 shadow-[0_10px_40px_rgba(15,23,42,.08)]">
+  <img src="/static/logo.png" alt="SUNU JÀNG PAY" class="w-48 mx-auto lg:hidden mb-4">
+  <h1 id="titre" class="text-2xl text-slate-900">Connexion</h1>
+  <p id="sous" class="text-slate-500 text-sm mt-1 mb-6">Accédez à l'espace de votre école.</p>
+  <form id="f" class="space-y-3" onsubmit="go(event)">
+    <div id="reg" class="hidden space-y-3"><input id="nom" placeholder="Nom de l'école"><input id="tel" placeholder="Téléphone (ex. 78 52 78 668)"></div>
+    <input id="email" type="email" placeholder="Email" required autocomplete="email">
+    <input id="pw" type="password" placeholder="Mot de passe (6 caractères min.)" required minlength="6" autocomplete="current-password">
+    <p id="err" class="text-sm text-[#EF4444] min-h-[1.25rem]"></p>
+    <button id="btn" class="w-full bg-[#6366F1] hover:bg-indigo-600 text-white font-semibold rounded-xl py-3 transition">Se connecter</button>
+  </form>
+  <button onclick="swap()" id="sw" class="mt-5 text-sm text-[#6366F1] font-semibold w-full">Pas encore de compte ? Créer mon école (7 jours gratuits)</button>
+</div></main>
+<script>
+let mode='login';
+function swap(){mode=mode=='login'?'register':'login';const r=mode=='register';
+ reg.classList.toggle('hidden',!r);titre.textContent=r?'Créer mon école':'Connexion';
+ sous.textContent=r?'7 jours d\'essai gratuit, sans carte bancaire.':'Accédez à l\'espace de votre école.';
+ btn.textContent=r?'Créer mon compte':'Se connecter';
+ sw.textContent=r?'J\'ai déjà un compte : me connecter':'Pas encore de compte ? Créer mon école (7 jours gratuits)';err.textContent=''}
+async function go(e){e.preventDefault();err.textContent='';btn.disabled=true;
+ const body={email:email.value,password:pw.value};if(mode=='register'){body.nom=nom.value;body.tel=tel.value}
+ try{const r=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();if(j.ok)location='/dashboard';else err.textContent=j.error||'Erreur'}
+ catch{err.textContent='Connexion impossible, réessayez.'}btn.disabled=false}
+</script></body></html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Abonnement – SUNU JÀNG PAY</title>
+<link rel="icon" href="/static/logo_icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=JetBrains+Mono:wght@700&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>body{font-family:Inter,sans-serif;font-weight:500;background:#F8FAFC}h1,h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800}.mono{font-family:'JetBrains Mono',monospace;font-weight:700}
+.card{animation:in .3s ease-out}@keyframes in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.card{animation:none}}</style></head>
+<body class="min-h-screen flex items-center justify-center p-5">
+<div class="card w-full max-w-xl bg-white rounded-3xl p-8 shadow-[0_10px_40px_rgba(15,23,42,.08)]">
+  <img src="/static/logo.png" alt="SUNU JÀNG PAY" class="w-52 mx-auto">
+  <h1 class="text-2xl text-center text-slate-900 mt-2">{% if actif %}Votre abonnement{% else %}Votre essai gratuit est terminé{% endif %}</h1>
+  <p class="text-center text-slate-500 mt-1">{{ ecole }} · {{ "{:,}".format(nb).replace(",", " ") }} élève{{ "s" if nb > 1 }}</p>
+
+  <div class="my-6 rounded-2xl bg-[#0F172A] text-center py-6">
+    <p class="text-slate-400 text-sm">Abonnement mensuel</p>
+    <p class="mono text-4xl text-white mt-1">{{ "{:,}".format(prix).replace(",", " ") }} FCFA</p>
+    <p class="text-slate-400 text-xs mt-2">Jusqu'à 200 élèves : 15 000 · jusqu'à 500 : 30 000 · au-delà : 45 000</p>
+  </div>
+
+  <p class="text-sm text-slate-600 mb-3">Envoyez le montant au <b class="mono">78 52 78 668</b> avec l'un de ces services :</p>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="rounded-2xl border-2 border-[#1DC8FF] p-4 text-center">
+      <svg viewBox="0 0 120 120" class="w-16 h-16 mx-auto" role="img" aria-label="Wave"><rect width="120" height="120" rx="28" fill="#1DC8FF"/><path d="M18 52c14-14 26-14 42 0s28 14 42 0M18 78c14-14 26-14 42 0s28 14 42 0" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round"/></svg>
+      <p class="font-semibold mt-2">Wave</p><p class="mono text-sm text-slate-600">78 52 78 668</p></div>
+    <div class="rounded-2xl border-2 border-[#FF7900] p-4 text-center">
+      <svg viewBox="0 0 120 120" class="w-16 h-16 mx-auto" role="img" aria-label="Orange Money"><rect width="120" height="120" fill="#FF7900"/><text x="60" y="58" text-anchor="middle" font-family="Arial" font-weight="700" font-size="26" fill="#fff">orange</text><text x="60" y="92" text-anchor="middle" font-family="Arial" font-weight="700" font-size="22" fill="#000">money</text></svg>
+      <p class="font-semibold mt-2">Orange Money</p><p class="mono text-sm text-slate-600">78 52 78 668</p></div>
+  </div>
+
+  <a href="{{ wa }}" target="_blank" rel="noopener" class="block mt-6 text-center bg-[#6366F1] hover:bg-indigo-600 text-white font-semibold rounded-xl py-3 transition">J'ai payé, activer</a>
+  <p class="text-xs text-slate-400 text-center mt-2">Un message WhatsApp pré-rempli s'ouvre. Votre accès est activé après vérification du paiement.</p>
+  <div class="flex justify-between mt-6 text-sm">
+    {% if actif %}<a href="/dashboard" class="text-[#6366F1] font-semibold">Retour au tableau de bord</a>{% else %}<span></span>{% endif %}
+    <a href="/logout" class="text-slate-500">Se déconnecter</a>
+  </div>
+</div></body></html>

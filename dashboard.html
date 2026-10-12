@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SUNU JÀNG PAY – {{ ecole }}</title>
+<link rel="icon" href="/static/logo_icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=JetBrains+Mono:wght@700&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+body{font-family:Inter,sans-serif;font-weight:500;background:#F8FAFC;color:#0F172A}
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800}
+.mono{font-family:'JetBrains Mono',monospace;font-weight:700}
+#side{width:240px;background:#0F172A;transition:width .3s}#side.min{width:72px}#side.min .lbl{display:none}
+.nav{display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:12px;color:#94A3B8;width:100%;text-align:left;transition:.2s}
+.nav:hover,.nav.on{background:#1E293B;color:#fff}.nav.on{box-shadow:inset 3px 0 #6366F1}
+.card{background:#fff;border-radius:18px;box-shadow:0 4px 20px rgba(15,23,42,.06)}
+tbody tr{transition:transform .2s,box-shadow .2s;background:#fff}tbody tr:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(15,23,42,.1);position:relative}
+.badge{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.PAYÉ{background:#22C55E1f;color:#16A34A}.RETARD{background:#EF44441f;color:#DC2626}.ATTENTE{background:#F59E0B1f;color:#D97706}
+.bar{transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.bd{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.bd.show{display:flex}.bd.show>div{animation:sc .3s ease-out}@keyframes sc{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+#toast{position:fixed;left:50%;top:-80px;transform:translateX(-50%);background:#22C55E;color:#fff;padding:12px 22px;border-radius:14px;font-weight:600;transition:top .4s;z-index:99;box-shadow:0 10px 30px #22C55E55}#toast.show{top:20px}#toast.err{background:#EF4444}
+body input,body select{border:1px solid #E2E8F0;border-radius:10px;padding:9px 12px;outline:none;background:#fff;width:100%}body input:focus,body select:focus{border-color:#6366F1;box-shadow:0 0 0 3px #6366F133}
+.btn{border-radius:10px;padding:9px 14px;font-weight:600;transition:.2s}.pri{background:#6366F1;color:#fff}.pri:hover{background:#4F46E5}.ghost{background:#EEF2FF;color:#4F46E5}
+.tab{display:none}.tab.on{display:block}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media(max-width:768px){#side{position:fixed;z-index:40;height:100%;left:-240px}#side.open{left:0}}
+</style></head>
+<body class="flex min-h-screen">
+<aside id="side" class="p-4 flex flex-col shrink-0 sticky top-0 h-screen">
+  <div class="flex items-center gap-3 mb-8 px-1"><img src="/static/logo_icon.png" width="32" height="32" alt="SUNU JÀNG PAY" class="rounded-lg bg-white"><span class="lbl text-white font-extrabold">SUNU JÀNG PAY</span></div>
+  <nav class="space-y-1 flex-1">
+    <button class="nav on" data-t="dash">📊<span class="lbl">Tableau de bord</span></button>
+    <button class="nav" data-t="parents">📞<span class="lbl">Parents</span></button>
+    <button class="nav" data-t="caisse">💰<span class="lbl">Caisse du jour</span></button>
+    <button class="nav" onclick="openLib()">🏷️<span class="lbl">Libellés</span></button>
+    <button class="nav" onclick="openHist()">🕘<span class="lbl">Historique</span></button>
+    <a class="nav" href="/abonnement">⭐<span class="lbl">Abonnement</span></a>
+  </nav>
+  <a class="nav" href="/logout">⏻<span class="lbl">Déconnexion</span></a>
+</aside>
+
+<div class="flex-1 min-w-0">
+<header class="bg-white px-5 py-3 flex items-center gap-3 shadow-sm sticky top-0 z-30">
+  <button onclick="toggleSide()" class="text-xl" aria-label="Menu">☰</button>
+  <img src="/static/logo.png" alt="SUNU JÀNG PAY" class="h-9 hidden sm:block">
+  <div class="ml-auto text-right"><p class="font-semibold leading-tight">{{ ecole }}</p><p class="text-xs text-slate-500">Fini de courir après les mensualités.</p></div>
+</header>
+{% if essai %}<div class="bg-[#F59E0B1f] text-[#B45309] text-sm px-5 py-2 font-semibold">Essai gratuit : {{ jours }} jour{{ 's' if jours > 1 }} restant{{ 's' if jours > 1 }}. <a href="/abonnement" class="underline">Voir l'abonnement</a></div>{% endif %}
+
+<main class="p-5 space-y-5">
+<section id="t-dash" class="tab on space-y-5">
+  <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="card p-5"><p class="text-sm text-slate-500">Total encaissé ce mois</p><p class="mono text-2xl mt-1 text-[#6366F1]"><span id="k1" data-v="0">0</span> <small class="text-xs">FCFA</small></p></div>
+    <div class="card p-5"><p class="text-sm text-slate-500">En retard</p><p class="mono text-2xl mt-1 text-[#EF4444]"><span id="k2">0</span></p><p class="text-xs text-slate-400 mt-1"><span id="k2b">0</span> FCFA à relancer</p></div>
+    <div class="card p-5"><p class="text-sm text-slate-500">Élèves payés</p><p class="mono text-2xl mt-1 text-[#22C55E]"><span id="k3">0</span>/<span id="k3t">0</span></p></div>
+    <div class="card p-5"><p class="text-sm text-slate-500">Taux de recouvrement</p><p class="mono text-2xl mt-1"><span id="k4">0</span>%</p><div class="h-2 bg-slate-100 rounded-full mt-2 overflow-hidden"><div id="bar" class="bar h-full bg-[#22C55E] rounded-full" style="width:0"></div></div></div>
+  </div>
+
+  <div class="card p-5"><div class="flex items-center justify-between mb-3"><h3>Encaissements sur 6 mois</h3><a href="/api/rapport.pdf" class="btn ghost text-sm">Exporter rapport PDF</a></div><div class="h-56"><canvas id="chart"></canvas></div></div>
+
+  <div class="card p-5">
+    <div class="flex flex-wrap gap-2 mb-4">
+      <input id="q" placeholder="Rechercher élève, matricule, parent…" class="flex-1 min-w-[200px]">
+      <select id="fc" class="!w-40"><option value="">Toutes classes</option></select>
+      <select id="fs" class="!w-40"><option value="">Tous statuts</option><option>PAYÉ</option><option>RETARD</option><option>EN ATTENTE</option></select>
+      <button class="btn pri" onclick="show('mAdd')">+ Élève</button>
+      <button class="btn ghost" onclick="show('mImp')">Import Excel</button>
+    </div>
+    <div class="overflow-x-auto"><table class="w-full text-sm" style="border-spacing:0 6px;border-collapse:separate">
+      <thead class="text-left text-slate-500"><tr><th class="p-2"></th><th>Matricule</th><th>Élève</th><th>Classe</th><th>Parent</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="rows"></tbody></table></div>
+    <div class="flex items-center justify-between mt-3 text-sm text-slate-500"><span id="cnt"></span><div class="flex gap-2"><button class="btn ghost" onclick="go(-1)">←</button><span id="pg"></span><button class="btn ghost" onclick="go(1)">→</button></div></div>
+  </div>
+</section>
+
+<section id="t-parents" class="tab card p-5"><div class="flex justify-between mb-3"><h3>Coordonnées des parents</h3><a href="/api/parents?export=1" class="btn pri text-sm">Exporter CSV</a></div>
+  <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-slate-500"><tr><th>Élève</th><th>Classe</th><th>Parent</th><th>Tél 1</th><th>Tél 2</th></tr></thead><tbody id="prows"></tbody></table></div></section>
+
+<section id="t-caisse" class="tab space-y-4"><h3>Caisse du jour</h3>
+  <div class="grid sm:grid-cols-4 gap-4"><div class="card p-5"><p class="text-sm text-slate-500">Cash</p><p id="cc" class="mono text-xl">0</p></div><div class="card p-5"><p class="text-sm text-slate-500">Wave</p><p id="cw" class="mono text-xl text-[#0EA5E9]">0</p></div><div class="card p-5"><p class="text-sm text-slate-500">Orange Money</p><p id="co" class="mono text-xl text-[#F97316]">0</p></div><div class="card p-5"><p class="text-sm text-slate-500">Total du jour</p><p id="ct" class="mono text-xl text-[#6366F1]">0</p></div></div>
+  <div class="card p-5 overflow-x-auto"><table class="w-full text-sm"><tbody id="crows"></tbody></table></div></section>
+</main></div>
+
+<!-- Modal payer -->
+<div id="mPay" class="bd"><div class="card p-6 w-full max-w-md space-y-3">
+  <h3 id="pT">Encaisser</h3><p id="pS" class="text-sm text-slate-500"></p>
+  <div id="pForm" class="space-y-3">
+    <select id="pLib" onchange="pAmt.value=this.selectedOptions[0].dataset.m"></select>
+    <select id="pMois"></select>
+    <select id="pMode"><option>Wave</option><option>Orange Money</option><option>Cash</option></select>
+    <input id="pAmt" type="number" min="1" class="mono" placeholder="Montant">
+    <div class="flex gap-2 justify-end"><button class="btn ghost" onclick="hide('mPay')">Annuler</button><button class="btn pri" onclick="pay()">Valider l'encaissement</button></div>
+  </div>
+  <div id="pDone" class="hidden space-y-2"><p class="font-semibold text-[#16A34A]">Paiement enregistré · <span id="pR" class="mono"></span></p>
+    <div class="grid grid-cols-2 gap-2"><a id="rPdf" target="_blank" class="btn pri text-center">Reçu PDF</a><a id="rPng" target="_blank" class="btn ghost text-center">Image WhatsApp</a><button class="btn ghost" onclick="copyTxt()">Copier texte SMS</button><a id="rWa" target="_blank" class="btn ghost text-center">Envoyer au parent</a></div>
+    <button class="btn ghost w-full" onclick="hide('mPay')">Fermer</button></div>
+</div></div>
+
+<!-- Modal libellés -->
+<div id="mLib" class="bd"><div class="card p-6 w-full max-w-md space-y-3 max-h-[90vh] overflow-auto">
+  <h3>Libellés</h3><p id="lS" class="text-sm text-slate-500">Transport, cantine, uniforme, cours du soir…</p>
+  <div class="flex gap-2"><input id="lN" placeholder="Nom (ex. Transport)"><input id="lM" type="number" placeholder="Montant" class="!w-32"><button class="btn pri" onclick="addLib()">Ajouter</button></div>
+  <div id="lL" class="space-y-2"></div>
+  <div class="flex justify-end gap-2"><button class="btn pri hidden" id="lSave" onclick="saveEL()">Enregistrer pour l'élève</button><button class="btn ghost" onclick="hide('mLib');load()">Fermer</button></div>
+</div></div>
+
+<!-- Modal historique -->
+<div id="mHist" class="bd"><div class="card p-6 w-full max-w-2xl max-h-[85vh] overflow-auto"><div class="flex justify-between mb-3"><h3>Historique</h3><button onclick="hide('mHist')">✕</button></div><div id="hL" class="text-sm divide-y"></div></div></div>
+
+<!-- Modal ajout élève -->
+<div id="mAdd" class="bd"><div class="card p-6 w-full max-w-md space-y-2"><h3>Nouvel élève</h3>
+  <input id="aN" placeholder="Nom complet"><input id="aC" placeholder="Classe (ex. 6ème A)"><input id="aP" placeholder="Nom du parent"><input id="aT" placeholder="Téléphone parent"><input id="aT2" placeholder="Téléphone 2 (option)"><input id="aM" type="number" placeholder="Montant mensuel (FCFA)">
+  <div class="flex justify-end gap-2 pt-2"><button class="btn ghost" onclick="hide('mAdd')">Annuler</button><button class="btn pri" onclick="addEl()">Ajouter</button></div></div></div>
+
+<!-- Modal import -->
+<div id="mImp" class="bd"><div class="card p-6 w-full max-w-md space-y-3"><h3>Importer des élèves</h3>
+  <p class="text-sm text-slate-500">Fichier .xlsx ou .csv, colonnes : nom, classe, parent_nom, parent_tel, parent_tel2, montant_base. Les matricules sont créés automatiquement.</p>
+  <input type="file" id="iF" accept=".csv,.xlsx"><div class="flex justify-end gap-2"><button class="btn ghost" onclick="hide('mImp')">Annuler</button><button class="btn pri" onclick="imp()">Importer</button></div></div></div>
+
+<div id="toast"></div>
+<script>
+const EID={{ eid }},BASE='https://factuor.onrender.com',$=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n).toLocaleString('fr-FR').replace(/\u202f|\u00a0/g,' ');
+const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+let S={els:[],page:1,pages:1,libs:[],cur:null,chart:null,txt:''};
+const api=async(u,o)=>{const r=await fetch(u,o);if(r.status==402){location='/abonnement';throw 0}if(r.status==401){location='/';throw 0}const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Erreur');return j};
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+function toast(m,e){const t=$('toast');t.textContent=m;t.className='show'+(e?' err':'');clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2800)}
+const show=id=>$(id).classList.add('show'),hide=id=>$(id).classList.remove('show');
+document.querySelectorAll('.bd').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('show')}));
+function toggleSide(){const s=$('side');innerWidth<768?s.classList.toggle('open'):s.classList.toggle('min')}
+document.querySelectorAll('.nav[data-t]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav[data-t]').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));$('t-'+b.dataset.t).classList.add('on');
+  if(b.dataset.t=='parents')loadParents();if(b.dataset.t=='caisse')loadCaisse();$('side').classList.remove('open')});
+function count(el,to){const a=+el.dataset.v||0,t0=performance.now();el.dataset.v=to;(function f(t){const p=Math.min(1,(t-t0)/900),v=Math.round(a+(to-a)*(1-Math.pow(1-p,3)));el.textContent=fmt(v);if(p<1)requestAnimationFrame(f)})(t0)}
+
+async function stats(){const s=await api('/api/stats/'+EID);
+  count($('k1'),s.encaisse);count($('k2'),s.retard);$('k2b').textContent=fmt(s.montant_retard);count($('k3'),s.payes);$('k3t').textContent=fmt(s.total);count($('k4'),s.taux);
+  requestAnimationFrame(()=>$('bar').style.width=s.taux+'%');
+  const lb=s.evolution.labels.map(l=>MOIS[+l.slice(5)-1].slice(0,4)+'.');
+  if(S.chart)S.chart.destroy();
+  S.chart=new Chart($('chart'),{type:'line',data:{labels:lb,datasets:[{data:s.evolution.values,borderColor:'#6366F1',backgroundColor:'rgba(99,102,241,.12)',fill:true,tension:.35,pointRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>fmt(v)}}}}})}
+
+async function load(){const p=new URLSearchParams({q:$('q').value,classe:$('fc').value,statut:$('fs').value,page:S.page});
+  const j=await api('/api/eleves/'+EID+'?'+p);S.els=j.eleves;S.pages=j.pages;
+  const fc=$('fc'),cur=fc.value;fc.innerHTML='<option value="">Toutes classes</option>'+j.classes.map(c=>`<option ${c==cur?'selected':''}>${esc(c)}</option>`).join('');
+  $('rows').innerHTML=j.eleves.length?j.eleves.map((e,i)=>{const st=e.statut=='EN ATTENTE'?'ATTENTE':e.statut,t=tel(e.parent_tel);
+    return `<tr><td class="p-2"><span class="w-9 h-9 rounded-full bg-[#6366F1] text-white grid place-items-center font-bold">${esc(e.nom[0]||'?').toUpperCase()}</span></td>
+    <td class="mono text-xs">${esc(e.matricule)}</td><td class="font-semibold">${esc(e.nom)}</td><td><span class="badge bg-indigo-50 text-indigo-600">${esc(e.classe)}</span></td>
+    <td>${esc(e.parent_nom)}<br>${t?`<a class="text-[#22C55E] text-xs" target="_blank" href="https://wa.me/${t}">${esc(e.parent_tel)}</a>`:''}</td>
+    <td class="mono">${fmt(e.total)}</td><td><span class="badge ${st}">${esc(e.statut)}</span></td>
+    <td class="whitespace-nowrap"><button class="btn bg-[#22C55E] text-white !py-1.5" onclick="openPay(${i})">Marquer payé</button>
+    <button class="btn ghost !py-1.5" title="Rappel WhatsApp" onclick="rappel(${i})">💬</button>
+    <button class="btn ghost !py-1.5" title="Libellés" onclick="openLib(${i})">🏷️</button></td></tr>`}).join('')
+    :'<tr><td colspan="8" class="p-8 text-center text-slate-400">Aucun élève. Ajoutez-en un ou importez un fichier Excel.</td></tr>';
+  $('cnt').textContent=fmt(j.total)+' élève(s)';$('pg').textContent=j.page+' / '+Math.max(1,j.pages)}
+const go=d=>{S.page=Math.min(Math.max(1,S.page+d),S.pages);load()};
+const tel=t=>{t=String(t||'').replace(/\D/g,'');return t.length==9?'221'+t:t};
+let dt;[$('q'),$('fc'),$('fs')].forEach(e=>e.addEventListener(e.tagName=='INPUT'?'input':'change',()=>{clearTimeout(dt);dt=setTimeout(()=>{S.page=1;load()},250)}));
+
+function rappel(i){const e=S.els[i],m=MOIS[new Date().getMonth()];
+  const msg=`Bonjour M. ${e.parent_nom}, rappel SUNU JÀNG PAY pour [${e.nom} - ${e.classe} - ${e.matricule}] : ${fmt(e.total)} FCFA ${m}. Lien reçu : ${BASE}/verify/${e.matricule}`;
+  open(`https://wa.me/${tel(e.parent_tel)}?text=${encodeURIComponent(msg)}`,'_blank')}
+
+async function openPay(i){const e=S.els[i];S.cur=e;if(!S.libs.length)S.libs=(await api('/api/libelles')).libelles;
+  $('pT').textContent='Encaisser · '+e.nom;$('pS').textContent=e.matricule+' · '+e.classe;
+  $('pLib').innerHTML=`<option data-m="${e.montant_base}">Scolarité</option>`+S.libs.filter(l=>e.libelles.includes(l.id)).map(l=>`<option data-m="${l.montant}">${esc(l.nom)}</option>`).join('');
+  $('pAmt').value=e.montant_base;const m=new Date().getMonth();$('pMois').innerHTML=MOIS.map((x,k)=>`<option ${k==m?'selected':''}>${x}</option>`).join('');
+  $('pForm').classList.remove('hidden');$('pDone').classList.add('hidden');show('mPay')}
+async function pay(){try{const j=await post('/api/payer',{eleve_id:S.cur.id,libelle:$('pLib').value,mois:$('pMois').value,mode:$('pMode').value,montant:+$('pAmt').value});
+  const u='/recu/'+j.recu;$('pR').textContent=j.recu;$('rPdf').href=u+'.pdf';$('rPng').href=u+'.png';
+  S.txt=`Reçu ${Math.round($('pAmt').value/1000)}k ${S.cur.nom} - ${S.cur.classe} - ${S.cur.matricule} - ${BASE}/verify/${j.recu}`;
+  $('rWa').href=`https://wa.me/${tel(S.cur.parent_tel)}?text=${encodeURIComponent(S.txt)}`;
+  $('pForm').classList.add('hidden');$('pDone').classList.remove('hidden');toast('Paiement enregistré ✔');load();stats()}catch(e){if(e)toast(e.message,1)}}
+const copyTxt=()=>navigator.clipboard.writeText(S.txt).then(()=>toast('Texte copié'));
+
+async function openLib(i){S.cur=i===undefined?null:S.els[i];S.libs=(await api('/api/libelles')).libelles;drawLib();
+  $('lS').textContent=S.cur?'Cochez les libellés de '+S.cur.nom:'Transport, cantine, uniforme, cours du soir…';$('lSave').classList.toggle('hidden',!S.cur);show('mLib')}
+function drawLib(){$('lL').innerHTML=S.libs.map(l=>`<label class="flex items-center gap-3 p-2 rounded-lg bg-slate-50">${S.cur?`<input type="checkbox" class="!w-auto lc" value="${l.id}" ${S.cur.libelles.includes(l.id)?'checked':''}>`:''}<span class="flex-1">${esc(l.nom)}</span><span class="mono text-sm">${fmt(l.montant)}</span><button type="button" onclick="delLib(${l.id})" class="text-[#EF4444]">✕</button></label>`).join('')||'<p class="text-sm text-slate-400">Aucun libellé pour le moment.</p>'}
+async function addLib(){try{S.libs=(await post('/api/libelles',{nom:$('lN').value,montant:+$('lM').value})).libelles;$('lN').value=$('lM').value='';drawLib();toast('Libellé ajouté')}catch(e){toast(e.message,1)}}
+async function delLib(id){S.libs=(await api('/api/libelles?id='+id,{method:'DELETE'})).libelles;drawLib()}
+async function saveEL(){const ids=[...document.querySelectorAll('.lc:checked')].map(c=>+c.value);await post('/api/eleves/libelles',{eleve_id:S.cur.id,libelles:ids});hide('mLib');toast('Libellés enregistrés');load()}
+
+async function openHist(){const h=await api('/api/historique');$('hL').innerHTML=h.map(x=>`<div class="py-2"><b>${esc(x.action)}</b> <span class="text-slate-600">${esc(x.details)}</span><br><span class="text-xs text-slate-400">${esc(x.date.replace('T',' '))} · IP ${esc(x.ip)}</span></div>`).join('')||'<p class="text-slate-400">Aucune action.</p>';show('mHist')}
+async function addEl(){try{const j=await post('/api/eleves/add',{nom:$('aN').value,classe:$('aC').value,parent_nom:$('aP').value,parent_tel:$('aT').value,parent_tel2:$('aT2').value,montant_base:+$('aM').value});
+  hide('mAdd');toast('Élève ajouté · '+j.matricule);['aN','aC','aP','aT','aT2','aM'].forEach(k=>$(k).value='');load();stats()}catch(e){toast(e.message,1)}}
+async function imp(){const f=$('iF').files[0];if(!f)return toast('Choisissez un fichier',1);const fd=new FormData();fd.append('file',f);
+  try{const j=await api('/api/eleves/import',{method:'POST',body:fd});hide('mImp');toast(j.n+' élèves importés');load();stats()}catch(e){toast(e.message,1)}}
+async function loadParents(){const p=await api('/api/parents');$('prows').innerHTML=p.map(r=>`<tr class="border-t"><td class="py-2">${esc(r.nom)}</td><td>${esc(r.classe)}</td><td>${esc(r.parent_nom)}</td><td><a class="text-[#22C55E]" target="_blank" href="https://wa.me/${tel(r.parent_tel)}">${esc(r.parent_tel)}</a></td><td>${esc(r.parent_tel2)}</td></tr>`).join('')}
+async function loadCaisse(){const c=await api('/api/caisse');$('cc').textContent=fmt(c.totaux.Cash);$('cw').textContent=fmt(c.totaux.Wave);$('co').textContent=fmt(c.totaux['Orange Money']);$('ct').textContent=fmt(c.total);
+  $('crows').innerHTML=c.paiements.map(p=>`<tr class="border-t"><td class="py-2">${esc(p.nom)} <span class="text-slate-400">${esc(p.classe)}</span></td><td>${esc(p.libelle)}</td><td>${esc(p.mode)}</td><td class="mono text-right">${fmt(p.montant)}</td></tr>`).join('')||'<tr><td class="py-6 text-center text-slate-400">Aucun encaissement aujourd\'hui.</td></tr>'}
+load();stats();
+</script></body></html>
